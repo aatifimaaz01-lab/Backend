@@ -22,6 +22,10 @@ class MongoTransport extends Transport {
       const type =
         level === "http" ? "api" : level === "error" ? "error" : "action";
 
+      // Omit stack traces from DB to avoid leaking internal paths
+      const safeStack =
+        process.env.NODE_ENV === "production" ? undefined : stack;
+
       /* TIME SERIES INSERT */
 
       await CombinedLog.create({
@@ -61,7 +65,7 @@ class MongoTransport extends Transport {
           timestamp,
           meta: {
             message,
-            stack,
+            stack: safeStack,
             url,
             method,
             userId,

@@ -3,18 +3,21 @@ const logger = require("../utils/logger");
 require("dotenv").config();
 
 let connectToDb = async () => {
+  const mongoUrl = process.env.Mongo_url;
+  if (!mongoUrl) {
+    logger.error("Mongo_url environment variable is not set");
+    process.exit(1);
+  }
+
   await mongoose
-    .connect(
-      process.env.Mongo_Url ||
-        "mongodb+srv://aatifimaaz4_db_user:E99TxOAD7GGfOKrK@cluster0.2bzlj4i.mongodb.net/employees?retryWrites=true&w=majority",
-    )
+    .connect(mongoUrl)
     .then(() => {
-      console.log(console.log("✅ MongoDB connected"));
+      console.log("✅ MongoDB connected");
       logger.info("MongoDB connected");
     })
     .catch((err) => {
-      console.log("❌ MongoDB connection error:", err);
-      logger.error("MongoDB connection error:", err);
+      console.log("❌ MongoDB connection error:", err.message);
+      logger.error("MongoDB connection error:", { message: err.message });
     });
 };
 

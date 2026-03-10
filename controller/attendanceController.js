@@ -26,12 +26,6 @@ const getToday = async (req, res) => {
     const data = record ? record.toObject() : null;
     if (data) data.activeSession = activeSession;
 
-    await auditLog({
-      req,
-      action: "viewed",
-      entity: "today's attendance",
-    });
-
     res.json({ success: true, data });
   } catch (err) {
     logger.error("Get today's attendance failed", {
@@ -158,12 +152,6 @@ const getLoggedInEmployees = async (req, res) => {
       })
       .map((record) => record.toObject());
 
-    await auditLog({
-      req,
-      action: "viewed",
-      entity: "logged-in employees",
-    });
-
     res.json({ success: true, data: loggedIn });
   } catch (err) {
     logger.error("Get logged-in employees failed", {
@@ -196,12 +184,6 @@ const getAbsentEmployees = async (req, res) => {
       (emp) => !attendanceEmployeeIds.has(emp._id.toString()),
     );
 
-    await auditLog({
-      req,
-      action: "viewed",
-      entity: "absent employees",
-    });
-
     res.json({ success: true, data: absentees });
   } catch (err) {
     logger.error("Get absent employees failed", {
@@ -231,12 +213,6 @@ const getLoggedOutEmployees = async (req, res) => {
         return lastSession && lastSession.checkOut;
       })
       .map((record) => record.toObject());
-
-    await auditLog({
-      req,
-      action: "viewed",
-      entity: "logged-out employees",
-    });
 
     res.json({ success: true, data: loggedOut });
   } catch (err) {

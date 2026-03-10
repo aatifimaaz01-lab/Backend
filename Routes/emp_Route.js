@@ -8,28 +8,28 @@ const {
   update_employees,
   view_single_employee,
   departmentStats,
+  checkEmail,
   // setPassword,
 } = require("../controller/empcontroller");
 
 const verifyUser = require("../middleware/verifyuser");
-const allowRoles = require("../middleware/roleCheck");
+const checkPermission = require("../middleware/checkPermission");
 
 let route = express.Router();
 
-/* 👔 Admin + Super Admin */
+/* 👔 Any role with employees.view */
 route.get(
   "/view",
   verifyUser,
-  allowRoles("Employee", "Admin", "Super Admin"),
+  checkPermission("employees", "view"),
   view_employees,
 );
 
-/* 👑 Super Admin only */
-
+/* 👑 employees.create */
 route.post(
   "/insert",
   verifyUser,
-  allowRoles("Super Admin"),
+  checkPermission("employees", "create"),
   upload.fields([
     { name: "profilePic", maxCount: 1 },
     { name: "documents", maxCount: 5 },
@@ -40,14 +40,14 @@ route.post(
 route.delete(
   "/delete/:id",
   verifyUser,
-  allowRoles("Super Admin"),
+  checkPermission("employees", "delete"),
   delete_employees,
 );
 
 route.put(
   "/update/:id",
   verifyUser,
-  allowRoles("Super Admin"),
+  checkPermission("employees", "update"),
   upload.fields([
     { name: "profilePic", maxCount: 1 },
     { name: "documents", maxCount: 5 },
@@ -58,12 +58,15 @@ route.put(
 route.get(
   "/departments",
   verifyUser,
-  allowRoles("Admin", "Super Admin"),
+  checkPermission("dashboard", "view"),
   departmentStats,
 );
 
 /* 👤 Any logged-in user can view their own details */
 route.get("/getSingle/:id", verifyUser, view_single_employee);
+
+/* 📧 Check if email already exists */
+route.get("/check-email", verifyUser, checkEmail);
 
 // route.post("/set-password/:token", setPassword);
 

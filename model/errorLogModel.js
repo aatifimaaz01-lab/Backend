@@ -8,6 +8,8 @@ const errorLogSchema = new mongoose.Schema(
       stack: String,
       url: String,
       method: String,
+      userId: String,
+      ip: String,
     },
   },
   { collection: "error_logs_ts" },

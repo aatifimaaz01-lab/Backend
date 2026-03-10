@@ -8,6 +8,8 @@ const attendanceRoutes = require("./Routes/attendanceRoutes");
 const morgan = require("morgan");
 const logger = require("./utils/logger");
 const logRoutes = require("./Routes/logRoutes");
+const roleRoutes = require("./Routes/roleRoutes");
+const dashboardRoutes = require("./Routes/dashboardRoutes");
 const { router: attendanceStream } = require("./Routes/attendanceStream");
 
 const cors = require("cors");
@@ -19,6 +21,11 @@ connectToDb();
 
 app.use(express.json());
 app.use((req, res, next) => {
+  // Skip logging for OPTIONS preflight and log endpoint itself
+  if (req.method === "OPTIONS" || req.originalUrl.startsWith("/api/logs")) {
+    return next();
+  }
+
   const start = Date.now();
 
   res.on("finish", () => {
@@ -30,7 +37,7 @@ app.use((req, res, next) => {
       url: req.originalUrl,
       status: res.statusCode,
       ip: req.ip,
-      duration,
+      responseTime: duration,
     });
   });
 
@@ -46,6 +53,8 @@ app.use("/api/attendance", attendanceStream);
 app.use("/api/reports", reportRoutes);
 app.use("/uploads", express.static("uploads"));
 app.use("/api/logs", logRoutes);
+app.use("/api/roles", roleRoutes);
+app.use("/api/dashboard", dashboardRoutes);
 
 app.use(errorHandler);
 

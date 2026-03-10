@@ -37,6 +37,8 @@ const logger = winston.createLogger({
     new winston.transports.File({
       filename: "logs/error.log",
       level: "error",
+      maxsize: 5 * 1024 * 1024, // 5 MB per file
+      maxFiles: 5,
     }),
 
     /**
@@ -44,6 +46,8 @@ const logger = winston.createLogger({
      */
     new winston.transports.File({
       filename: "logs/combined.log",
+      maxsize: 10 * 1024 * 1024, // 10 MB per file
+      maxFiles: 5,
       format: winston.format.combine(
         excludeHttp(),
         winston.format.timestamp(),
@@ -56,6 +60,8 @@ const logger = winston.createLogger({
      */
     new winston.transports.File({
       filename: "logs/requests.log",
+      maxsize: 10 * 1024 * 1024, // 10 MB per file
+      maxFiles: 5,
       format: winston.format.combine(
         httpFilter(),
         winston.format.timestamp(),

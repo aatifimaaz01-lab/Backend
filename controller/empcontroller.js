@@ -14,12 +14,6 @@ const view_employees = async (req, res) => {
   try {
     const employee_List = await employee_Model.find();
 
-    await auditLog({
-      req,
-      action: "viewed",
-      entity: "all employees",
-    });
-
     return res.status(200).json({
       success: true,
       data: employee_List,
@@ -58,13 +52,6 @@ const view_single_employee = async (req, res) => {
       });
     }
 
-    await auditLog({
-      req,
-      action: "viewed",
-      entity: "employee",
-      targetEmail: employee.email,
-    });
-
     return res.status(200).json({
       success: true,
       data: employee,
@@ -95,6 +82,15 @@ const insert_employees = async (req, res) => {
   try {
     const { name, email, phone_no, Department, Designation, salary, skills } =
       req.body;
+
+    // Check if email already exists
+    const existing = await employee_Model.findOne({ email });
+    if (existing) {
+      return res.status(409).json({
+        success: false,
+        message: "Email already exists",
+      });
+    }
 
     const token = crypto.randomBytes(32).toString("hex");
 
@@ -174,6 +170,14 @@ const delete_employees = async (req, res) => {
       return res.status(404).json({
         success: false,
         message: "Employee not found",
+      });
+    }
+
+    // 🔒 Prevent deletion of Super Admin
+    if (employee.Designation === "Super Admin") {
+      return res.status(403).json({
+        success: false,
+        message: "Super Admin cannot be deleted",
       });
     }
 
@@ -291,12 +295,6 @@ const departmentStats = async (req, res) => {
       },
     ]);
 
-    await auditLog({
-      req,
-      action: "viewed",
-      entity: "department statistics",
-    });
-
     res.json({ success: true, data });
   } catch (err) {
     logger.error("Department stats error", {
@@ -315,6 +313,31 @@ const departmentStats = async (req, res) => {
   }
 };
 
+/**
+ * ================================
+ * CHECK EMAIL EXISTS
+ * ================================
+ */
+const checkEmail = async (req, res) => {
+  try {
+    const { email } = req.query;
+    if (!email) {
+      return res.json({ success: true, exists: false });
+    }
+    const existing = await employee_Model.findOne({ email });
+    return res.json({ success: true, exists: !!existing });
+  } catch (error) {
+    logger.error("Email check failed", {
+      type: "error",
+      message: error.message,
+      stack: error.stack,
+    });
+    return res
+      .status(500)
+      .json({ success: false, message: "Email check failed" });
+  }
+};
+
 module.exports = {
   view_employees,
   insert_employees,
@@ -322,4 +345,5 @@ module.exports = {
   update_employees,
   view_single_employee,
   departmentStats,
+  checkEmail,
 };

@@ -1,5 +1,6 @@
 const { employee_Model } = require("../model/emp");
 const logAction = require("./actionLogger");
+const logger = require("./logger");
 
 async function auditLog({
   req,
@@ -29,7 +30,7 @@ async function auditLog({
     });
   } catch (err) {
     // never crash system because of logging
-    console.error("Audit log failed:", err.message);
+    logger.error("Audit log failed", { message: err.message });
   }
 }
 

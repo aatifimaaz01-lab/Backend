@@ -19,6 +19,6 @@ module.exports = function logAction({
       ip,
     });
   } catch (err) {
-    console.error("Action Logger Error:", err);
+    logger.error("Action Logger Error", { message: err.message });
   }
 };

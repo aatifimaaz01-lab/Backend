@@ -1,6 +1,6 @@
 const express = require("express");
 const verifyUser = require("../middleware/verifyuser");
-const allowRoles = require("../middleware/roleCheck");
+const checkPermission = require("../middleware/checkPermission");
 
 const {
   createProject,
@@ -15,29 +15,44 @@ const {
 
 const router = express.Router();
 
-/* Only Super Admin */
-router.post("/create", verifyUser, allowRoles("Super Admin"), createProject);
+/* projects.create */
+router.post(
+  "/create",
+  verifyUser,
+  checkPermission("projects", "create"),
+  createProject,
+);
 
 router.delete(
   "/delete/:id",
   verifyUser,
-  allowRoles("Super Admin"),
+  checkPermission("projects", "delete"),
   deleteProject,
 );
 
-/* Admin + Super Admin */
-router.get("/all", verifyUser, allowRoles("Admin", "Super Admin"), getProjects);
+/* projects.view */
+router.get(
+  "/all",
+  verifyUser,
+  checkPermission("projects", "view"),
+  getProjects,
+);
 
 router.put(
   "/update/:id",
   verifyUser,
-  allowRoles("Super Admin", "Admin"),
+  checkPermission("projects", "update"),
   updateProject,
 );
 
-/* All users */
+/* All authenticated users – own projects */
 router.get("/mine", verifyUser, myProjects);
 
-router.put("/update-status/:id", verifyUser, updateProjectStatus);
+router.put(
+  "/update-status/:id",
+  verifyUser,
+  checkPermission("my_projects", "update_status"),
+  updateProjectStatus,
+);
 
 module.exports = router;

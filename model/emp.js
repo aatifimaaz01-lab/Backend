@@ -10,7 +10,6 @@ const employeeSchema = new mongoose.Schema(
 
     Designation: {
       type: String,
-      enum: ["Super Admin", "Admin", "Employee"],
       required: true,
     },
 

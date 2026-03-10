@@ -24,6 +24,20 @@ const login = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
+    if (!user.password) {
+      logger.warn("Login failed - password not set", {
+        userId: user._id,
+        method: req.method,
+        url: req.originalUrl,
+        ip: req.ip,
+      });
+
+      return res.status(401).json({
+        message:
+          "Password not set. Please check your email to set your password.",
+      });
+    }
+
     const match = await bcrypt.compare(password, user.password);
 
     if (!match) {
@@ -79,12 +93,6 @@ const profile = async (req, res) => {
       });
     }
 
-    await auditLog({
-      req,
-      action: "viewed",
-      entity: "profile",
-    });
-
     res.json({ success: true, user });
   } catch (err) {
     logger.error("Profile error", {
@@ -104,6 +112,33 @@ const changePassword = async (req, res) => {
   try {
     const userId = req.user.id;
     const { current, new: newPassword } = req.body;
+
+    // Password strength check
+    if (!newPassword || newPassword.length < 8) {
+      return res
+        .status(400)
+        .json({ msg: "Password must be at least 8 characters" });
+    }
+    if (!/[A-Z]/.test(newPassword)) {
+      return res
+        .status(400)
+        .json({ msg: "Password must contain at least one uppercase letter" });
+    }
+    if (!/[a-z]/.test(newPassword)) {
+      return res
+        .status(400)
+        .json({ msg: "Password must contain at least one lowercase letter" });
+    }
+    if (!/[0-9]/.test(newPassword)) {
+      return res
+        .status(400)
+        .json({ msg: "Password must contain at least one number" });
+    }
+    if (!/[^A-Za-z0-9]/.test(newPassword)) {
+      return res
+        .status(400)
+        .json({ msg: "Password must contain at least one special character" });
+    }
 
     const user = await employee_Model.findById(userId);
 
@@ -132,7 +167,7 @@ const changePassword = async (req, res) => {
       ip: req.ip,
     });
 
-    res.status(500).json({ msg: err.message });
+    res.status(500).json({ msg: "Failed to change password" });
   }
 };
 
@@ -151,7 +186,7 @@ const forgotPassword = async (req, res) => {
     user.resetTokenExpiry = Date.now() + 1000 * 60 * 15;
     await user.save();
 
-    const resetLink = `http://localhost:5173/reset-password/${token}`;
+    const resetLink = `${process.env.FRONTEND_URL}/reset-password/${token}`;
 
     await sendMail(
       email,
@@ -185,6 +220,39 @@ const setPassword = async (req, res) => {
   try {
     const { token } = req.params;
     const { password } = req.body;
+
+    // Password strength check
+    if (!password || password.length < 8) {
+      return res
+        .status(400)
+        .json({ message: "Password must be at least 8 characters" });
+    }
+    if (!/[A-Z]/.test(password)) {
+      return res
+        .status(400)
+        .json({
+          message: "Password must contain at least one uppercase letter",
+        });
+    }
+    if (!/[a-z]/.test(password)) {
+      return res
+        .status(400)
+        .json({
+          message: "Password must contain at least one lowercase letter",
+        });
+    }
+    if (!/[0-9]/.test(password)) {
+      return res
+        .status(400)
+        .json({ message: "Password must contain at least one number" });
+    }
+    if (!/[^A-Za-z0-9]/.test(password)) {
+      return res
+        .status(400)
+        .json({
+          message: "Password must contain at least one special character",
+        });
+    }
 
     const user = await employee_Model.findOne({
       resetToken: token,
@@ -226,6 +294,33 @@ const resetPassword = async (req, res) => {
   try {
     const { token } = req.params;
     const { password } = req.body;
+
+    // Password strength check
+    if (!password || password.length < 8) {
+      return res
+        .status(400)
+        .json({ msg: "Password must be at least 8 characters" });
+    }
+    if (!/[A-Z]/.test(password)) {
+      return res
+        .status(400)
+        .json({ msg: "Password must contain at least one uppercase letter" });
+    }
+    if (!/[a-z]/.test(password)) {
+      return res
+        .status(400)
+        .json({ msg: "Password must contain at least one lowercase letter" });
+    }
+    if (!/[0-9]/.test(password)) {
+      return res
+        .status(400)
+        .json({ msg: "Password must contain at least one number" });
+    }
+    if (!/[^A-Za-z0-9]/.test(password)) {
+      return res
+        .status(400)
+        .json({ msg: "Password must contain at least one special character" });
+    }
 
     const user = await employee_Model.findOne({
       resetToken: token,
