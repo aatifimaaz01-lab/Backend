@@ -3,6 +3,10 @@ const nodemailer = require("nodemailer");
 
 dns.setDefaultResultOrder("ipv4first");
 
+const forceIpv4Lookup = (hostname, options, callback) => {
+  dns.lookup(hostname, { ...options, family: 4 }, callback);
+};
+
 const sendMail = async (to, subject, html, text) => {
   const user = (process.env.EMAIL_USER || "")
     .replace(/^['\"]|['\"]$/g, "")
@@ -22,6 +26,7 @@ const sendMail = async (to, subject, html, text) => {
     port: 465,
     secure: true,
     family: 4,
+    lookup: forceIpv4Lookup,
     connectionTimeout: 10000,
     greetingTimeout: 10000,
     socketTimeout: 10000,
