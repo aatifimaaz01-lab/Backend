@@ -3,10 +3,6 @@ const nodemailer = require("nodemailer");
 
 dns.setDefaultResultOrder("ipv4first");
 
-const forceIpv4Lookup = (hostname, options, callback) => {
-  dns.lookup(hostname, { ...options, family: 4 }, callback);
-};
-
 const sendMail = async (to, subject, html, text) => {
   const user = (process.env.EMAIL_USER || "")
     .replace(/^['\"]|['\"]$/g, "")
@@ -21,12 +17,14 @@ const sendMail = async (to, subject, html, text) => {
 
   console.log("MAILER_MODE=ipv4-gmail", { to, subject });
 
+  const [smtpHost] = await dns.promises.resolve4("smtp.gmail.com");
+
   const transporter = nodemailer.createTransport({
-    host: "smtp.gmail.com",
+    host: smtpHost,
+    servername: "smtp.gmail.com",
     port: 465,
     secure: true,
     family: 4,
-    lookup: forceIpv4Lookup,
     connectionTimeout: 10000,
     greetingTimeout: 10000,
     socketTimeout: 10000,
