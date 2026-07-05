@@ -1,9 +1,9 @@
 const { employee_Model } = require("../model/emp");
 const Attendance = require("../model/attendance");
 const crypto = require("crypto");
-const nodemailer = require("nodemailer");
 const logger = require("../utils/logger");
 const auditLog = require("../utils/auditLogger");
+const sendMail = require("../utils/sendMail");
 
 /**
  * ================================
@@ -109,20 +109,6 @@ const insert_employees = async (req, res) => {
     global.io.emit("employee_created", newUser);
     global.io.emit("dashboard_updated");
 
-    const transporter = nodemailer.createTransport({
-      host: "smtp.gmail.com",
-      port: 465,
-      secure: true,
-      family: 4,
-      connectionTimeout: 10000,
-      greetingTimeout: 10000,
-      socketTimeout: 10000,
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-      },
-    });
-
     const link = `${process.env.FRONTEND_URL}/set-password/${token}`;
 
     logger.info("Sending employee password setup email", {
@@ -132,22 +118,41 @@ const insert_employees = async (req, res) => {
       link,
     });
 
-    await transporter.sendMail({
-      to: email,
-      subject: "Set your account password",
-      html: `
-        <h2>Welcome to EmployeeMS</h2>
-        <p>Please set your password using the link below:</p>
-        <a href="${link}">Set Password</a>
-      `,
-    });
+    let mailSent = true;
 
-    logger.info("Employee password setup email sent", {
-      method: req.method,
-      url: req.originalUrl,
-      email,
-      link,
-    });
+    try {
+      await sendMail(
+        email,
+        "Set your account password",
+        `
+          <h2>Welcome to EmployeeMS</h2>
+          <p>Please set your password using the link below:</p>
+          <p><a href="${link}">Set Password</a></p>
+          <p>If it does not open, copy and paste this URL:</p>
+          <p>${link}</p>
+        `,
+        `Welcome to EmployeeMS. Set your password using this link: ${link}`,
+      );
+
+      logger.info("Employee password setup email sent", {
+        method: req.method,
+        url: req.originalUrl,
+        email,
+        link,
+      });
+    } catch (mailError) {
+      mailSent = false;
+      logger.error("Password setup email failed", {
+        type: "error",
+        message: mailError.message,
+        stack: mailError.stack,
+        method: req.method,
+        url: req.originalUrl,
+        ip: req.ip,
+        email,
+        link,
+      });
+    }
 
     await auditLog({
       req,
@@ -158,7 +163,9 @@ const insert_employees = async (req, res) => {
 
     res.json({
       success: true,
-      message: "Employee created. Password email sent.",
+      message: mailSent
+        ? "Employee created. Password email sent."
+        : "Employee created, but the password email could not be sent. Check logs and email configuration.",
     });
   } catch (error) {
     logger.error("Employee creation failed", {
