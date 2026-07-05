@@ -15,6 +15,8 @@ const sendMail = async (to, subject, html, text) => {
     throw new Error("EMAIL_USER and EMAIL_PASS must be set in production");
   }
 
+  console.log("MAILER_MODE=ipv4-gmail", { to, subject });
+
   const transporter = nodemailer.createTransport({
     host: "smtp.gmail.com",
     port: 465,
