@@ -25,6 +25,7 @@ const projectSchema = new mongoose.Schema({
   members: [{ type: mongoose.Schema.Types.ObjectId, ref: "employees" }],
 
   createdAt: { type: Date, default: Date.now },
+  customer: { type: mongoose.Schema.Types.ObjectId, ref: "Customer" }, // Company association
 });
 
 const Project =

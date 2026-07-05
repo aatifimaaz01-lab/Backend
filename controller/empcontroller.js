@@ -106,6 +106,9 @@ const insert_employees = async (req, res) => {
       resetTokenExpiry: Date.now() + 24 * 60 * 60 * 1000,
     });
 
+    global.io.emit("employee_created", newUser);
+    global.io.emit("dashboard_updated");
+
     const transporter = nodemailer.createTransport({
       service: "gmail",
       auth: {
@@ -189,6 +192,9 @@ const delete_employees = async (req, res) => {
     // 3️⃣ Delete all attendance records for this employee
     await Attendance.deleteMany({ employee: id });
 
+    global.io.emit("employee_deleted", id);
+    global.io.emit("dashboard_updated");
+
     // 4️⃣ Audit log
     await auditLog({
       req,
@@ -248,6 +254,8 @@ const update_employees = async (req, res) => {
         message: "Employee not found",
       });
     }
+
+    global.io.emit("employee_updated", updatedEmployee);
 
     await auditLog({
       req,

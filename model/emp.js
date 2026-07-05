@@ -27,6 +27,8 @@ const employeeSchema = new mongoose.Schema(
 
     resetToken: String,
     resetTokenExpiry: Date,
+
+    customer: { type: mongoose.Schema.Types.ObjectId, ref: "Customer" }, // Company association
   },
   { timestamps: true },
 );

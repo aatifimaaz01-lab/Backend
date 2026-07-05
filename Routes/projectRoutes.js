@@ -1,7 +1,6 @@
 const express = require("express");
 const verifyUser = require("../middleware/verifyuser");
 const checkPermission = require("../middleware/checkPermission");
-
 const {
   createProject,
   assignEmployee,
@@ -11,11 +10,16 @@ const {
   deleteProject,
   updateProject,
   updateProjectStatus,
+  clientCompanyProjects,
 } = require("../controller/projectController");
 
 const router = express.Router();
 
-/* projects.create */
+// ================= CLIENT COMPANY =================
+// Get all projects for client's company (for client contacts)
+router.get("/company-projects", verifyUser, clientCompanyProjects);
+
+// ================= CREATE =================
 router.post(
   "/create",
   verifyUser,
@@ -23,6 +27,23 @@ router.post(
   createProject,
 );
 
+// ================= ASSIGN EMPLOYEE =================
+router.post(
+  "/assign/:id",
+  verifyUser,
+  checkPermission("projects", "update"),
+  assignEmployee,
+);
+
+// ================= REMOVE MEMBER =================
+router.put(
+  "/remove-member/:id",
+  verifyUser,
+  checkPermission("projects", "update"),
+  removeMember,
+);
+
+// ================= DELETE =================
 router.delete(
   "/delete/:id",
   verifyUser,
@@ -30,7 +51,7 @@ router.delete(
   deleteProject,
 );
 
-/* projects.view */
+// ================= VIEW ALL =================
 router.get(
   "/all",
   verifyUser,
@@ -38,6 +59,7 @@ router.get(
   getProjects,
 );
 
+// ================= UPDATE =================
 router.put(
   "/update/:id",
   verifyUser,
@@ -45,9 +67,10 @@ router.put(
   updateProject,
 );
 
-/* All authenticated users – own projects */
+// ================= MY PROJECTS =================
 router.get("/mine", verifyUser, myProjects);
 
+// ================= UPDATE STATUS =================
 router.put(
   "/update-status/:id",
   verifyUser,

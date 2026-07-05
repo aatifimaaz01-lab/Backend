@@ -22,9 +22,12 @@ const { employee_Model } = require("../model/emp");
 
 /* ---------- REDIS CONNECTION ---------- */
 
-const connection = new Redis({
-  maxRetriesPerRequest: null,
-});
+const connection = new Redis(
+  process.env.REDIS_URL || "redis://127.0.0.1:6379",
+  {
+    maxRetriesPerRequest: null,
+  },
+);
 
 /* ---------- WORKER ---------- */
 

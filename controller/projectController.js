@@ -1,20 +1,57 @@
 const { Project } = require("../model/project");
 const logAction = require("../utils/actionLogger");
 const logger = require("../utils/logger");
-
+// Get all projects for the logged-in client contact's company
+const clientCompanyProjects = async (req, res) => {
+  try {
+    // req.user.id is employee _id, req.user.role is Designation
+    const { employee_Model } = require("../model/emp");
+    const emp = await employee_Model.findById(req.user.id);
+    if (!emp || !emp.customer) {
+      return res
+        .status(403)
+        .json({ msg: "Not a client contact or no company assigned" });
+    }
+    const projects = await Project.find({ customer: emp.customer })
+      .populate("members", "name email")
+      .lean();
+    res.json({ success: true, data: projects });
+  } catch (err) {
+    logger.error("Client company projects failed", {
+      type: "error",
+      message: err.message,
+      stack: err.stack,
+      method: req.method,
+      url: req.originalUrl,
+      ip: req.ip,
+    });
+    res.status(500).json({ msg: "Failed to fetch company projects" });
+  }
+  // End of file
+};
 /* ================= CREATE PROJECT ================= */
 const createProject = async (req, res) => {
   try {
     const members = req.body.members || [];
+    const customer = req.body.customer; // company association
+    if (!customer) {
+      return res
+        .status(400)
+        .json({ msg: "Customer (company) is required for a project." });
+    }
 
     const project = await Project.create({
       title: req.body.title,
       description: req.body.description,
       deadline: req.body.deadline,
       members,
+      customer, // save company association
       status: members.length > 0 ? "Assigned" : "Pending",
       createdBy: req.user.id,
     });
+
+    global.io.emit("project_created", project);
+    global.io.emit("dashboard_updated");
 
     logAction({
       message: "Project created",
@@ -49,6 +86,8 @@ const updateProject = async (req, res) => {
     if (!project) {
       return res.status(404).json({ msg: "Project not found" });
     }
+
+    global.io.emit("project_updated", project);
 
     logAction({
       message: "Project updated",
@@ -88,6 +127,8 @@ const removeMember = async (req, res) => {
     );
 
     await project.save();
+
+    global.io.emit("project_member_removed", project);
 
     logAction({
       message: "Removed member from project",
@@ -132,6 +173,8 @@ const assignEmployee = async (req, res) => {
 
     await project.save();
 
+    global.io.emit("project_member_added", project);
+
     logAction({
       message: "Assigned employee to project",
       userId: req.user.id,
@@ -170,6 +213,8 @@ const updateProjectStatus = async (req, res) => {
       return res.status(404).json({ msg: "Project not found" });
     }
 
+    global.io.emit("project_status_updated", project);
+
     logAction({
       message: "Project status updated",
       userId: req.user.id,
@@ -196,7 +241,15 @@ const updateProjectStatus = async (req, res) => {
 /* ================= GET ALL PROJECTS ================= */
 const getProjects = async (req, res) => {
   try {
-    const projects = await Project.find().populate("members", "name email");
+    let filter = {};
+    // If not admin, filter by user's company
+    if (!req.user.isAdmin && req.user.customer) {
+      filter.customer = req.user.customer;
+    }
+    const projects = await Project.find(filter).populate(
+      "members",
+      "name email",
+    );
 
     logAction({
       message: "Viewed all projects",
@@ -230,6 +283,9 @@ const deleteProject = async (req, res) => {
       return res.status(404).json({ msg: "Project not found" });
     }
 
+    global.io.emit("project_deleted", req.params.id);
+    global.io.emit("dashboard_updated");
+
     logAction({
       message: "Project deleted",
       userId: req.user.id,
@@ -256,7 +312,12 @@ const deleteProject = async (req, res) => {
 /* ================= MY PROJECTS ================= */
 const myProjects = async (req, res) => {
   try {
-    const projects = await Project.find({ members: req.user.id });
+    let filter = { members: req.user.id };
+    // If user has a company, filter by company
+    if (req.user.customer) {
+      filter.customer = req.user.customer;
+    }
+    const projects = await Project.find(filter);
 
     logAction({
       message: "Viewed my projects",
@@ -290,4 +351,5 @@ module.exports = {
   updateProject,
   deleteProject,
   updateProjectStatus,
+  clientCompanyProjects,
 };

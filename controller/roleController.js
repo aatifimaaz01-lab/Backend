@@ -8,6 +8,7 @@ const AVAILABLE_PERMISSIONS = {
   dashboard: ["view"],
   employees: ["view", "create", "update", "delete"],
   projects: ["view", "create", "update", "delete"],
+  tasks: ["view", "create", "update", "delete"],
   attendance: ["view", "checkin", "checkout"],
   reports: ["view", "create"],
   logs: ["view"],
