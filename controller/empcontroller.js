@@ -125,6 +125,13 @@ const insert_employees = async (req, res) => {
 
     const link = `${process.env.FRONTEND_URL}/set-password/${token}`;
 
+    logger.info("Sending employee password setup email", {
+      method: req.method,
+      url: req.originalUrl,
+      email,
+      link,
+    });
+
     await transporter.sendMail({
       to: email,
       subject: "Set your account password",
@@ -133,6 +140,13 @@ const insert_employees = async (req, res) => {
         <p>Please set your password using the link below:</p>
         <a href="${link}">Set Password</a>
       `,
+    });
+
+    logger.info("Employee password setup email sent", {
+      method: req.method,
+      url: req.originalUrl,
+      email,
+      link,
     });
 
     await auditLog({

@@ -4,6 +4,7 @@ const Contact = require("../model/contact");
 // Create a new customer with client contact and send set-password email
 const { employee_Model } = require("../model/emp");
 const sendMail = require("../utils/sendMail");
+const logger = require("../utils/logger");
 const crypto = require("crypto");
 
 exports.createCustomer = async (req, res) => {
@@ -46,6 +47,14 @@ exports.createCustomer = async (req, res) => {
       // 4. Send set-password email
       const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
       const setPasswordLink = `${frontendUrl}/set-password/${resetToken}`;
+
+      logger.info("Sending customer activation email", {
+        method: req.method,
+        url: req.originalUrl,
+        email: contact.email,
+        link: setPasswordLink,
+      });
+
       await sendMail(
         contact.email,
         "Set your password for EmployeeMS",
@@ -54,6 +63,13 @@ exports.createCustomer = async (req, res) => {
         <a href="${setPasswordLink}">${setPasswordLink}</a>
         <p>If you did not request this, please ignore this email.</p>`,
       );
+
+      logger.info("Customer activation email sent", {
+        method: req.method,
+        url: req.originalUrl,
+        email: contact.email,
+        link: setPasswordLink,
+      });
     }
 
     res.status(201).json({ customer, contact: contactDoc });

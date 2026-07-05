@@ -188,12 +188,26 @@ const forgotPassword = async (req, res) => {
 
     const resetLink = `${process.env.FRONTEND_URL}/reset-password/${token}`;
 
+    logger.info("Sending password reset email", {
+      method: req.method,
+      url: req.originalUrl,
+      email,
+      link: resetLink,
+    });
+
     await sendMail(
       email,
       "Password Reset",
       `<p>Click the link below to reset your password:</p>
        <a href="${resetLink}">${resetLink}</a>`,
     );
+
+    logger.info("Password reset email sent", {
+      method: req.method,
+      url: req.originalUrl,
+      email,
+      link: resetLink,
+    });
 
     await auditLog({
       req: { ...req, user: { id: user._id } },
