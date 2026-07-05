@@ -22,18 +22,20 @@ const { employee_Model } = require("../model/emp");
 
 /* ---------- REDIS CONNECTION ---------- */
 
-const connection = new Redis(
-  process.env.REDIS_URL || "redis://127.0.0.1:6379",
-  {
+const redisUrl = process.env.REDIS_URL;
+
+if (!redisUrl) {
+  console.warn("REDIS_URL is not set; report worker will not start");
+} else {
+  const connection = new Redis(redisUrl, {
     maxRetriesPerRequest: null,
-  },
-);
+  });
 
-/* ---------- WORKER ---------- */
+  /* ---------- WORKER ---------- */
 
-new Worker(
-  "reportQueue",
-  async (job) => {
+  new Worker(
+    "reportQueue",
+    async (job) => {
     const { reportId, filters } = job.data;
 
     try {
@@ -149,8 +151,9 @@ new Worker(
 
       throw err;
     }
-  },
-  { connection },
-);
+    },
+    { connection },
+  );
 
-console.log("🚀 Report worker running...");
+  console.log("🚀 Report worker running...");
+}

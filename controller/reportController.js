@@ -7,6 +7,12 @@ const logger = require("../utils/logger");
 /* ================= CREATE REPORT ================= */
 const createReport = async (req, res) => {
   try {
+    if (!process.env.REDIS_URL) {
+      return res.status(503).json({
+        message: "Report generation is unavailable until REDIS_URL is configured",
+      });
+    }
+
     const filters = req.body;
 
     const report = await Report.create({

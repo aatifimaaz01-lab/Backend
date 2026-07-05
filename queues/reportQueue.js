@@ -2,13 +2,24 @@ const { Queue } = require("bullmq");
 const Redis = require("ioredis");
 require("dotenv").config();
 
-const connection = new Redis(
-  process.env.REDIS_URL || "redis://127.0.0.1:6379",
-  {
-    maxRetriesPerRequest: null,
-  },
-);
+const redisUrl = process.env.REDIS_URL;
 
-const reportQueue = new Queue("reportQueue", { connection });
+if (!redisUrl) {
+  console.warn("REDIS_URL is not set; report queue is disabled");
+}
+
+const connection = redisUrl
+  ? new Redis(redisUrl, {
+      maxRetriesPerRequest: null,
+    })
+  : null;
+
+const reportQueue = connection
+  ? new Queue("reportQueue", { connection })
+  : {
+      add: async () => {
+        throw new Error("Report queue is disabled because REDIS_URL is not set");
+      },
+    };
 
 module.exports = { reportQueue };
